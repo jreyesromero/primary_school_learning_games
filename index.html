@@ -121,6 +121,11 @@
       <strong id="zas-name">¡ZAS!</strong>
       <span id="zas-desc">Repasa las tablas tocando la mosca con el resultado correcto.</span>
     </a>
+
+    <a class="game" id="carrera-link" href="primaria/matematicas/multiplicar/carrera/index.html">
+      <strong id="carrera-name">Carrera</strong>
+      <span id="carrera-desc">Avanza una casilla por cada respuesta correcta hasta la meta.</span>
+    </a>
   </section>
 </main>
 
@@ -135,6 +140,8 @@
       multiplication: 'Multiplicar',
       zas: '¡ZAS!',
       zasDesc: 'Repasa las tablas tocando la mosca con el resultado correcto.',
+      carrera: 'Carrera',
+      carreraDesc: 'Avanza una casilla por cada respuesta correcta hasta la meta.',
     },
     en: {
       title: 'Learning games',
@@ -144,6 +151,8 @@
       multiplication: 'Multiplication',
       zas: 'ZAP!',
       zasDesc: 'Practise times tables by tapping the fly with the right answer.',
+      carrera: 'Race',
+      carreraDesc: 'Move one square for every right answer until the finish line.',
     },
   };
 
@@ -175,6 +184,10 @@
     document.getElementById('topic-multiplication').textContent = s.multiplication;
     document.getElementById('zas-name').textContent = s.zas;
     document.getElementById('zas-desc').textContent = s.zasDesc;
+    document.getElementById('carrera-name').textContent = s.carrera;
+    document.getElementById('carrera-desc').textContent = s.carreraDesc;
+    document.getElementById('carrera-link').href =
+      `primaria/matematicas/multiplicar/carrera/index.html?lang=${lang}`;
 
     // El enlace al juego lleva el idioma para que el juego se abra igual
     document.getElementById('zas-link').href =
