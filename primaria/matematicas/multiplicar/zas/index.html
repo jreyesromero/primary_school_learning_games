@@ -69,6 +69,13 @@
     margin-bottom: 14px;
   }
   .hidden, [hidden] { display: none !important; }
+  a.home {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
 
   /* Setup */
   .tables {
@@ -122,7 +129,6 @@
     color: var(--fg);
     border: 2px solid var(--border);
   }
-  button.small { padding: 6px 12px; font-size: 0.9rem; }
   button:disabled { opacity: 0.7; cursor: default; }
   .wide { width: 100%; margin-top: 8px; }
 
@@ -166,6 +172,7 @@
     border: 3px solid var(--accent);
   }
   .fly:not(:disabled):hover { transform: scale(1.03); }
+  .fly:disabled { opacity: 1; }
   .fly.right { background: var(--ok); border-color: var(--ok); color: #fff; }
   .fly.wrong { background: var(--bad); border-color: var(--bad); color: #fff; }
   .feedback {
@@ -177,7 +184,7 @@
   }
   .feedback.ok { color: var(--ok); }
   .feedback.bad { color: var(--bad); }
-  .fly:disabled { opacity: 1; }
+  #next { width: 100%; }
 
   /* Animaciones de acierto y fallo */
   @keyframes pop {
@@ -214,7 +221,6 @@
   @media (prefers-reduced-motion: reduce) {
     .fly.pop, .fly.shake { animation: none; }
   }
-  #next { width: 100%; }
 
   /* End */
   .endscore {
@@ -228,24 +234,25 @@
 </head>
 <body>
 <main>
-  <h1>💥 ¡ZAS! Tablas</h1>
+  <a class="home" id="home-link" href="../../../../index.html">← Inicio</a>
+  <h1>💥 <span data-i18n="title"></span></h1>
 
   <!-- Pantalla de configuración -->
   <section id="setup" class="card">
-    <p><strong>¿Qué tablas repasamos?</strong></p>
+    <p><strong data-i18n="chooseTables"></strong></p>
     <div id="tables" class="tables"></div>
 
     <div class="row">
-      <label><input type="checkbox" id="timer-toggle"> Con cronómetro (8 segundos por pregunta)</label>
+      <label><input type="checkbox" id="timer-toggle"> <span data-i18n="timerLabel"></span></label>
     </div>
     <div class="row">
-      <label><input type="checkbox" id="sound-toggle"> Sonidos</label>
+      <label><input type="checkbox" id="sound-toggle"> <span data-i18n="soundLabel"></span></label>
     </div>
 
     <p class="muted" id="mastery-setup"></p>
 
-    <button id="start" class="wide">¡Empezar ronda!</button>
-    <button id="reset" class="secondary wide">Borrar progreso guardado</button>
+    <button id="start" class="wide" data-i18n="start"></button>
+    <button id="reset" class="secondary wide" data-i18n="reset"></button>
   </section>
 
   <!-- Pantalla de juego -->
@@ -264,25 +271,112 @@
 
     <div id="feedback" class="feedback" aria-live="polite"></div>
 
-    <button id="next" hidden>Siguiente ➜</button>
-    <button id="mute" class="secondary wide">🔊 Sonido: activado</button>
-    <button id="quit" class="secondary wide">Salir</button>
+    <button id="next" hidden data-i18n="next"></button>
+    <button id="mute" class="secondary wide"></button>
+    <button id="quit" class="secondary wide" data-i18n="quit"></button>
   </section>
 
   <!-- Pantalla final -->
   <section id="end" class="card" hidden>
-    <p style="text-align:center;font-weight:700">¡Ronda terminada!</p>
+    <p style="text-align:center;font-weight:700" data-i18n="roundOver"></p>
     <div id="endscore" class="endscore"></div>
-    <p><strong>Para repasar:</strong></p>
+    <p><strong data-i18n="toReview"></strong></p>
     <ul id="missed" class="missed"></ul>
     <p class="muted" id="mastery-end"></p>
-    <button id="again" class="wide">Otra ronda</button>
-    <button id="back" class="secondary wide">Cambiar tablas</button>
+    <button id="again" class="wide" data-i18n="again"></button>
+    <button id="back" class="secondary wide" data-i18n="changeTables"></button>
   </section>
 </main>
 
 <script>
 (() => {
+  // ---------- Idioma ----------
+  // Prioridad: ?lang= en la URL, luego la preferencia guardada, luego el idioma del navegador.
+  const T = {
+    es: {
+      title: '¡ZAS! Tablas de multiplicar',
+      home: '← Inicio',
+      chooseTables: '¿Qué tablas repasamos?',
+      timerLabel: 'Con cronómetro (8 segundos por pregunta)',
+      soundLabel: 'Sonidos',
+      start: '¡Empezar ronda!',
+      reset: 'Borrar progreso guardado',
+      next: 'Siguiente ➜',
+      quit: 'Salir',
+      soundOn: '🔊 Sonido: activado',
+      soundOff: '🔇 Sonido: silenciado',
+      roundOver: '¡Ronda terminada!',
+      toReview: 'Para repasar:',
+      noMistakes: '¡Ninguna fallada! 🎉',
+      again: 'Otra ronda',
+      changeTables: 'Cambiar tablas',
+      questionOf: (n, total) => `Pregunta ${n} de ${total}`,
+      scoreOf: (c, total) => `${c} de ${total} aciertos`,
+      mastery: (m, total) => `Datos dominados (nivel 5): ${m} de ${total}`,
+      optionLabel: (i, v) => `Opción ${i}: ${v}`,
+      zap: '¡ZAS!',
+      wellDone: '¡ZAS! ¡Muy bien!',
+      timeUp: ans => `¡Se acabó el tiempo! Era ${ans}`,
+      wrong: ans => `Era ${ans}. ¡Otra vez!`,
+      confirmReset: '¿Borrar todo el progreso guardado?',
+      chooseOne: 'Elige al menos una tabla.',
+    },
+    en: {
+      title: 'ZAP! Times Tables',
+      home: '← Home',
+      chooseTables: 'Which times tables shall we practise?',
+      timerLabel: 'With timer (8 seconds per question)',
+      soundLabel: 'Sounds',
+      start: 'Start round!',
+      reset: 'Clear saved progress',
+      next: 'Next ➜',
+      quit: 'Quit',
+      soundOn: '🔊 Sound: on',
+      soundOff: '🔇 Sound: off',
+      roundOver: 'Round finished!',
+      toReview: 'To review:',
+      noMistakes: 'No mistakes! 🎉',
+      again: 'Another round',
+      changeTables: 'Change tables',
+      questionOf: (n, total) => `Question ${n} of ${total}`,
+      scoreOf: (c, total) => `${c} of ${total} correct`,
+      mastery: (m, total) => `Facts mastered (level 5): ${m} of ${total}`,
+      optionLabel: (i, v) => `Option ${i}: ${v}`,
+      zap: 'ZAP!',
+      wellDone: 'ZAP! Well done!',
+      timeUp: ans => `Time's up! It was ${ans}`,
+      wrong: ans => `It was ${ans}. Keep going!`,
+      confirmReset: 'Delete all saved progress?',
+      chooseOne: 'Choose at least one table.',
+    },
+  };
+
+  function readLangStore() {
+    try { return localStorage.getItem('site-lang'); } catch (e) { return null; }
+  }
+  function pickLang() {
+    const fromUrl = new URLSearchParams(location.search).get('lang');
+    if (fromUrl === 'es' || fromUrl === 'en') return fromUrl;
+    const saved = readLangStore();
+    if (saved === 'es' || saved === 'en') return saved;
+    return (navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es';
+  }
+  const LANG = pickLang();
+  const t = (key, ...args) => {
+    const v = T[LANG][key];
+    return typeof v === 'function' ? v(...args) : v;
+  };
+
+  // El enlace de inicio mantiene el idioma elegido
+  document.getElementById('home-link').href = `../../../../index.html?lang=${LANG}`;
+  document.documentElement.lang = LANG;
+  document.title = t('title');
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.getElementById('home-link').textContent = t('home');
+
   const KEY = 'tablas-zas-v1';
   const ROUND_LEN = 10;      // preguntas por ronda
   const TIME_LIMIT = 8000;   // ms por pregunta (si el cronómetro está activo)
@@ -318,12 +412,12 @@
   function allFacts(tables) {
     const seen = new Set();
     const out = [];
-    for (const t of tables) {
+    for (const tb of tables) {
       for (const m of MULTIPLIERS) {
-        const k = factKey(t, m);
+        const k = factKey(tb, m);
         if (!seen.has(k)) {
           seen.add(k);
-          out.push({ a: Math.min(t, m), b: Math.max(t, m) });
+          out.push({ a: Math.min(tb, m), b: Math.max(tb, m) });
         }
       }
     }
@@ -371,14 +465,10 @@
     return shuffle(opts);
   }
 
-  function masteryCounts() {
+  function masteryText() {
     const facts = allFacts(store.tables);
     const mastered = facts.filter(f => levelOf(f.a, f.b) >= 5).length;
-    return { mastered, total: facts.length };
-  }
-  function masteryText() {
-    const { mastered, total } = masteryCounts();
-    return `Datos dominados (nivel 5): ${mastered} de ${total}`;
+    return t('mastery', mastered, facts.length);
   }
 
   // ---------- Estado de juego ----------
@@ -429,13 +519,9 @@
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const z = document.createElement('div');
     z.className = 'zap';
-    z.textContent = '¡ZAS!';
+    z.textContent = t('zap');
     document.body.appendChild(z);
     setTimeout(() => z.remove(), 900);
-  }
-  function renderSound() {
-    $('sound-toggle').checked = !!store.sound;
-    $('mute').textContent = store.sound ? '🔊 Sonido: activado' : '🔇 Sonido: silenciado';
   }
 
   // ---------- Pantallas ----------
@@ -443,17 +529,22 @@
     for (const s of ['setup', 'game', 'end']) $(s).hidden = (s !== name);
   }
 
+  function renderSound() {
+    $('sound-toggle').checked = !!store.sound;
+    $('mute').textContent = store.sound ? t('soundOn') : t('soundOff');
+  }
+
   function renderSetup() {
     const box = $('tables');
     box.innerHTML = '';
-    for (const t of ALL_TABLES) {
+    for (const tb of ALL_TABLES) {
       const label = document.createElement('label');
       const input = document.createElement('input');
       input.type = 'checkbox';
-      input.value = t;
-      input.checked = store.tables.includes(t);
+      input.value = tb;
+      input.checked = store.tables.includes(tb);
       const span = document.createElement('span');
-      span.textContent = 'x' + t;
+      span.textContent = 'x' + tb;
       label.append(input, span);
       box.appendChild(label);
     }
@@ -464,7 +555,7 @@
   }
 
   function updateHud() {
-    $('hud-round').textContent = `Pregunta ${Math.min(round.n, ROUND_LEN)} de ${ROUND_LEN}`;
+    $('hud-round').textContent = t('questionOf', Math.min(round.n, ROUND_LEN), ROUND_LEN);
     $('hud-correct').textContent = `✅ ${round.correct}`;
     $('hud-streak').textContent = `🔥 ${round.streak}`;
   }
@@ -496,7 +587,7 @@
   function startRound() {
     const tables = [...document.querySelectorAll('#tables input:checked')].map(i => Number(i.value));
     if (tables.length === 0) {
-      alert('Elige al menos una tabla.');
+      alert(t('chooseOne'));
       return;
     }
     store.tables = tables;
@@ -528,7 +619,7 @@
       btn.className = 'fly';
       btn.dataset.v = v;
       btn.textContent = v;
-      btn.setAttribute('aria-label', `Opción ${i + 1}: ${v}`);
+      btn.setAttribute('aria-label', t('optionLabel', i + 1, v));
       btn.addEventListener('click', () => answer(v));
       box.appendChild(btn);
     });
@@ -580,13 +671,13 @@
     $('question').textContent = `${a} × ${b} = ${ans}`;
     const fb = $('feedback');
     if (ok) {
-      fb.textContent = '¡ZAS! ¡Muy bien!';
+      fb.textContent = t('wellDone');
       fb.className = 'feedback ok';
     } else if (choice === null) {
-      fb.textContent = `¡Se acabó el tiempo! Era ${ans}`;
+      fb.textContent = t('timeUp', ans);
       fb.className = 'feedback bad';
     } else {
-      fb.textContent = `Era ${ans}. ¡Otra vez!`;
+      fb.textContent = t('wrong', ans);
       fb.className = 'feedback bad';
     }
 
@@ -597,13 +688,13 @@
   function endRound() {
     stopTimer();
     current = null;
-    $('endscore').textContent = `${round.correct} de ${ROUND_LEN} aciertos`;
+    $('endscore').textContent = t('scoreOf', round.correct, ROUND_LEN);
 
     const list = $('missed');
     list.innerHTML = '';
     if (round.missed.length === 0) {
       const li = document.createElement('li');
-      li.textContent = '¡Ninguna fallada! 🎉';
+      li.textContent = t('noMistakes');
       list.appendChild(li);
     } else {
       for (const m of round.missed) {
@@ -641,7 +732,7 @@
   });
 
   $('reset').addEventListener('click', () => {
-    if (confirm('¿Borrar todo el progreso guardado?')) {
+    if (confirm(t('confirmReset'))) {
       store.levels = {};
       saveStore();
       renderSetup();

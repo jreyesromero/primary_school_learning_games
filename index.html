@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Juegos de aprendizaje / Learning games</title>
+<style>
+  :root {
+    --bg: #fff8ec;
+    --fg: #2b2b2b;
+    --card: #ffffff;
+    --accent: #f28c28;
+    --accent-fg: #ffffff;
+    --muted: #777777;
+    --border: #e6dccb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1d1f24;
+      --fg: #f1f1f1;
+      --card: #2a2d35;
+      --accent: #ffa94d;
+      --accent-fg: #1d1f24;
+      --muted: #aaaaaa;
+      --border: #3a3e48;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1d1f24;
+    --fg: #f1f1f1;
+    --card: #2a2d35;
+    --accent: #ffa94d;
+    --accent-fg: #1d1f24;
+    --muted: #aaaaaa;
+    --border: #3a3e48;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+  main { width: 100%; max-width: 520px; }
+  h1 { text-align: center; font-size: 1.8rem; margin: 12px 0 4px; }
+  .subtitle { text-align: center; color: var(--muted); margin: 0 0 16px; }
+
+  .lang {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .lang button {
+    font: inherit;
+    font-weight: 700;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 2px solid var(--border);
+    background: transparent;
+    color: var(--fg);
+    cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  section.block {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  section.block h2 {
+    font-size: 1.25rem;
+    margin: 0 0 12px;
+  }
+  section.block h3 {
+    font-size: 1.05rem;
+    margin: 14px 0 8px;
+    color: var(--muted);
+  }
+  a.game {
+    display: block;
+    text-decoration: none;
+    color: var(--fg);
+    border: 2px solid var(--accent);
+    border-radius: 14px;
+    padding: 14px 16px;
+  }
+  a.game:hover, a.game:focus-visible { background: var(--accent); color: var(--accent-fg); }
+  a.game strong { display: block; font-size: 1.4rem; }
+  a.game span { font-size: 0.95rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="site-title">Juegos de aprendizaje</h1>
+  <p class="subtitle" id="site-subtitle">Pequeños juegos para practicar en casa</p>
+
+  <div class="lang" role="group" aria-label="Idioma / Language">
+    <button type="button" data-lang="es" aria-pressed="false">Castellano</button>
+    <button type="button" data-lang="en" aria-pressed="false">English</button>
+  </div>
+
+  <section class="block">
+    <h2 id="level-primary">Primaria</h2>
+
+    <h3 id="subject-maths">Matemáticas</h3>
+    <h3 id="topic-multiplication">Multiplicar</h3>
+
+    <a class="game" id="zas-link" href="primaria/matematicas/multiplicar/zas/index.html">
+      <strong id="zas-name">¡ZAS!</strong>
+      <span id="zas-desc">Repasa las tablas tocando la mosca con el resultado correcto.</span>
+    </a>
+  </section>
+</main>
+
+<script>
+(() => {
+  const T = {
+    es: {
+      title: 'Juegos de aprendizaje',
+      subtitle: 'Pequeños juegos para practicar en casa',
+      primary: 'Primaria',
+      maths: 'Matemáticas',
+      multiplication: 'Multiplicar',
+      zas: '¡ZAS!',
+      zasDesc: 'Repasa las tablas tocando la mosca con el resultado correcto.',
+    },
+    en: {
+      title: 'Learning games',
+      subtitle: 'Little games to practise at home',
+      primary: 'Primary school',
+      maths: 'Maths',
+      multiplication: 'Multiplication',
+      zas: 'ZAP!',
+      zasDesc: 'Practise times tables by tapping the fly with the right answer.',
+    },
+  };
+
+  const STORE_KEY = 'site-lang';
+
+  function readSaved() {
+    try { return localStorage.getItem(STORE_KEY); } catch (e) { return null; }
+  }
+  function saveLang(lang) {
+    try { localStorage.setItem(STORE_KEY, lang); } catch (e) { /* ignorar */ }
+  }
+
+  function pickLang() {
+    const fromUrl = new URLSearchParams(location.search).get('lang');
+    if (fromUrl === 'es' || fromUrl === 'en') return fromUrl;
+    const saved = readSaved();
+    if (saved === 'es' || saved === 'en') return saved;
+    return (navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es';
+  }
+
+  function apply(lang) {
+    const s = T[lang];
+    document.documentElement.lang = lang;
+    document.title = s.title;
+    document.getElementById('site-title').textContent = s.title;
+    document.getElementById('site-subtitle').textContent = s.subtitle;
+    document.getElementById('level-primary').textContent = s.primary;
+    document.getElementById('subject-maths').textContent = s.maths;
+    document.getElementById('topic-multiplication').textContent = s.multiplication;
+    document.getElementById('zas-name').textContent = s.zas;
+    document.getElementById('zas-desc').textContent = s.zasDesc;
+
+    // El enlace al juego lleva el idioma para que el juego se abra igual
+    document.getElementById('zas-link').href =
+      `primaria/matematicas/multiplicar/zas/index.html?lang=${lang}`;
+
+    for (const btn of document.querySelectorAll('.lang button')) {
+      btn.setAttribute('aria-pressed', String(btn.dataset.lang === lang));
+    }
+  }
+
+  for (const btn of document.querySelectorAll('.lang button')) {
+    btn.addEventListener('click', () => {
+      saveLang(btn.dataset.lang);
+      apply(btn.dataset.lang);
+    });
+  }
+
+  apply(pickLang());
+})();
+</script>
+</body>
+</html>
