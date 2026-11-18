@@ -387,7 +387,7 @@
 
   // ---------- Almacenamiento (con try/catch por si el navegador lo bloquea) ----------
   function defaultStore() {
-    return { levels: {}, tables: [2, 3, 4, 5, 6, 7, 8, 9, 10], timer: false, sound: true };
+    return { levels: {}, tables: [], timer: false, sound: true };
   }
   function loadStore() {
     try {
@@ -545,9 +545,11 @@
       input.checked = store.tables.includes(tb);
       const span = document.createElement('span');
       span.textContent = 'x' + tb;
+      input.addEventListener('change', updateStartButton);
       label.append(input, span);
       box.appendChild(label);
     }
+    updateStartButton();
     $('timer-toggle').checked = !!store.timer;
     renderSound();
     $('mastery-setup').textContent = masteryText();
@@ -584,6 +586,12 @@
   }
 
   // ---------- Flujo de ronda ----------
+  // El botón "Empezar" solo está activo si hay al menos una tabla elegida
+  function updateStartButton() {
+    const n = document.querySelectorAll('#tables input:checked').length;
+    $('start').disabled = n === 0;
+  }
+
   function startRound() {
     const tables = [...document.querySelectorAll('#tables input:checked')].map(i => Number(i.value));
     if (tables.length === 0) {
