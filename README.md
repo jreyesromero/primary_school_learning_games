@@ -42,6 +42,7 @@ The games are designed around a few principles:
 
 - Choose the tables to practise. The start button stays disabled until at least one table is chosen.
 - A track of 10 squares with a finish line. Each right answer moves the car one square forward.
+- Turbo: a right answer on a fact the child still finds hard (level 1 or 2) moves the car two squares. A "⚡ Turbo" label shows before the question when this applies, so review becomes the fastest way to win.
 - A wrong answer does not move the car back: the right answer is shown and the child stays on the same square.
 - The round ends at the finish line, and the summary shows how many questions it took and which facts to review.
 - No timer. It has its own saved progress, separate from ¡ZAS!.
@@ -103,6 +104,7 @@ Los juegos se basan en unos pocos principios:
 
 - Se eligen las tablas que se quieren repasar. El botón de empezar sigue desactivado hasta elegir al menos una.
 - Un tablero de 10 casillas con meta al final. Cada respuesta correcta avanza el coche una casilla.
+- Turbo: un acierto en un dato que aún le cuesta (nivel 1 o 2) avanza el coche dos casillas. Antes de la pregunta aparece la etiqueta "⚡ Turbo" cuando corresponde, así repasar es lo más rápido para ganar.
 - Un fallo no hace retroceder: se muestra la respuesta correcta y el niño se queda en la misma casilla.
 - La ronda termina al llegar a la meta. El resumen indica cuántas preguntas han hecho falta y qué datos repasar.
 - Sin cronómetro. Tiene su propio progreso guardado, separado del de ¡ZAS!.

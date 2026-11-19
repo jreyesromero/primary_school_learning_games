@@ -122,6 +122,7 @@
 
   /* Tablero */
   .track {
+    position: relative;
     display: flex;
     gap: 4px;
     margin: 12px 0 18px;
@@ -140,15 +141,30 @@
   }
   .square.done { background: var(--ok); border-color: var(--ok); }
   .square.finish { background: var(--card); }
-  .car { display: inline-block; }
+  .car {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    pointer-events: none;
+    transition: left 0.6s ease-in-out, top 0.6s ease-in-out;
+    z-index: 2;
+  }
   .car.bump { animation: bump 0.5s ease-out; }
+  .car.wiggle { animation: wiggle 0.4s ease-in-out; }
+  @keyframes wiggle {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    75% { transform: translateX(6px); }
+  }
   @keyframes bump {
     0% { transform: translateY(0); }
     40% { transform: translateY(-10px) rotate(-6deg); }
     100% { transform: translateY(0); }
   }
   @media (prefers-reduced-motion: reduce) {
-    .car.bump { animation: none; }
+    .car, .car.bump, .car.wiggle { animation: none; transition: none; }
   }
 
   /* Juego */
@@ -232,6 +248,7 @@
 
     <div id="track" class="track" aria-label="track"></div>
 
+    <div id="turbo-hint" class="muted" style="text-align:center;min-height:1.2rem;font-weight:700"></div>
     <div id="question" class="question"></div>
     <div id="options" class="options"></div>
     <div id="feedback" class="feedback" aria-live="polite"></div>
@@ -278,6 +295,8 @@
       mastery: (m, total) => `Datos dominados (nivel 5): ${m} de ${total}`,
       optionLabel: (i, v) => `Opción ${i}: ${v}`,
       right: '¡Correcto! Avanzas una casilla',
+      turboHint: '⚡ Turbo: 2 casillas',
+      turboRight: '¡Turbo! Avanzas dos casillas',
       wrong: ans => `Era ${ans}. Te quedas en tu casilla: ¡otra vez!`,
       confirmReset: '¿Borrar todo el progreso guardado de esta carrera?',
       chooseOne: 'Elige al menos una tabla.',
@@ -303,6 +322,8 @@
       mastery: (m, total) => `Facts mastered (level 5): ${m} of ${total}`,
       optionLabel: (i, v) => `Option ${i}: ${v}`,
       right: 'Correct! You move forward one square',
+      turboHint: '⚡ Turbo: 2 squares',
+      turboRight: 'Turbo! You move forward two squares',
       wrong: ans => `It was ${ans}. You stay on your square: try again!`,
       confirmReset: 'Delete all saved progress for this race?',
       chooseOne: 'Choose at least one table.',
@@ -343,6 +364,7 @@
   // ---------- Constantes y almacenamiento ----------
   const KEY = 'tablas-carrera-v1';   // progreso propio, separado de ¡ZAS!
   const TRACK = 10;                  // casillas hasta la meta
+  const TURBO_LEVEL = 2;             // datos en nivel 1 o 2 avanzan dos casillas al acertar
   const ALL_TABLES = [2, 3, 4, 5, 6, 7, 8, 9, 10];
   const MULTIPLIERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
   const $ = id => document.getElementById(id);
@@ -503,25 +525,63 @@
     show('setup');
   }
 
-  // Tablero: las casillas recorridas en verde, el coche en la posición actual, la meta al final
-  function renderTrack(bump = false) {
+  // Tablero: casilla 0 = salida (🚦), casilla TRACK = meta (🏁).
+  // El coche es un elemento propio que se desliza entre casillas.
+  function buildTrack() {
     const track = $('track');
     track.innerHTML = '';
-    for (let i = 1; i <= TRACK; i++) {
+    for (let i = 0; i <= TRACK; i++) {
       const sq = document.createElement('div');
       sq.className = 'square';
-      if (i <= race.pos) sq.classList.add('done');
+      if (i === 0) sq.textContent = '🚦';
       if (i === TRACK) {
         sq.classList.add('finish');
         sq.textContent = '🏁';
       }
-      if (i === race.pos) {
-        const car = document.createElement('span');
-        car.className = 'car' + (bump && !reduceMotion() ? ' bump' : '');
-        car.textContent = '🏎️';
-        sq.appendChild(car);
-      }
       track.appendChild(sq);
+    }
+    const car = document.createElement('div');
+    car.className = 'car';
+    car.id = 'car';
+    car.textContent = '🏎️';
+    track.appendChild(car);
+  }
+
+  // Coloca el coche sobre la casilla actual; con animate=true se desliza hasta ella
+  function placeCar(animate) {
+    const car = $('car');
+    const sq = $('track').querySelectorAll('.square')[race.pos];
+    if (!sq) return;
+    if (!animate) car.style.transition = 'none';
+    car.style.width = sq.offsetWidth + 'px';
+    car.style.height = sq.offsetHeight + 'px';
+    car.style.left = sq.offsetLeft + 'px';
+    car.style.top = sq.offsetTop + 'px';
+    if (!animate) {
+      void car.offsetWidth;        // aplica la posición sin transición
+      car.style.transition = '';
+    }
+  }
+
+  // mode: 'init' (sin animación), 'move' (avanza), 'miss' (se sacude)
+  function updateTrack(mode) {
+    $('track').querySelectorAll('.square').forEach((sq, i) => {
+      sq.classList.toggle('done', i >= 1 && i <= race.pos);
+    });
+    const car = $('car');
+    const motion = !reduceMotion();
+    placeCar(mode === 'move' && motion);
+    car.classList.remove('bump', 'wiggle');
+    if (!motion) return;
+    if (mode === 'move') {
+      // Salto al llegar, cuando termina el deslizamiento
+      setTimeout(() => {
+        void car.offsetWidth;
+        car.classList.add('bump');
+      }, 600);
+    } else if (mode === 'miss') {
+      void car.offsetWidth;
+      car.classList.add('wiggle');
     }
   }
 
@@ -541,6 +601,7 @@
     saveStore();
     race = { pos: 0, questions: 0, correct: 0, missed: [], last: null, facts: allFacts(tables) };
     show('game');
+    buildTrack();
     nextQuestion();
   }
 
@@ -552,7 +613,9 @@
     const [x, y] = Math.random() < 0.5 ? [f.a, f.b] : [f.b, f.a];
     const ans = f.a * f.b;
     const opts = makeOptions(ans, f.a, f.b);
-    current = { a: f.a, b: f.b, answer: ans, opts, answered: false };
+    const turbo = levelOf(f.a, f.b) <= TURBO_LEVEL;
+    current = { a: f.a, b: f.b, answer: ans, opts, answered: false, turbo };
+    $('turbo-hint').textContent = turbo ? t('turboHint') : '';
 
     $('question').textContent = `${x} × ${y} = ?`;
     $('feedback').textContent = '';
@@ -571,7 +634,7 @@
       box.appendChild(btn);
     });
 
-    renderTrack(false);
+    updateTrack('init');
     updateHud();
   }
 
@@ -596,9 +659,9 @@
     const fb = $('feedback');
     if (ok) {
       race.correct++;
-      race.pos++;
+      race.pos = Math.min(TRACK, race.pos + (current.turbo ? 2 : 1));
       playCorrect();
-      fb.textContent = t('right');
+      fb.textContent = current.turbo ? t('turboRight') : t('right');
       fb.className = 'feedback ok';
     } else {
       race.missed.push({ a, b, ans });
@@ -608,7 +671,7 @@
     }
 
     $('question').textContent = `${a} × ${b} = ${ans}`;
-    renderTrack(ok);
+    updateTrack(ok ? 'move' : 'miss');
     updateHud();
     $('next').hidden = false;
   }
@@ -657,6 +720,11 @@
       saveStore();
       renderSetup();
     }
+  });
+
+  // Al cambiar el tamaño de la ventana, el coche se recoloca sobre su casilla
+  window.addEventListener('resize', () => {
+    if (race && !$('game').hidden) placeCar(false);
   });
 
   // Teclado: 1-4 para elegir, Enter para seguir
