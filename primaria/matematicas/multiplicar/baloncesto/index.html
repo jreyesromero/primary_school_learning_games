@@ -291,7 +291,7 @@
   }
   .ball.missed { animation: shotMiss 1.7s ease-in forwards; }
   .ball.cpu { filter: hue-rotate(200deg) saturate(1.4); }
-  /* Gif de canasta (fuente: gifss.com, descargado y alojado en esta carpeta) */
+  /* Gifs de canasta y fallo (fuentes: gifss.com y Tenor, descargados y alojados en esta carpeta) */
   .canasta-gif {
     position: fixed;
     left: 50%;
@@ -625,11 +625,11 @@
     setTimeout(() => { b.remove(); hoop.remove(); }, 1800);
   }
 
-  // Gif de canasta cuando la niña acierta (aparece tras el lanzamiento)
-  function canastaGif() {
+  // Gif de acierto o fallo (aparece tras el lanzamiento). src: 'canasta.gif' o 'fallo.gif'
+  function gifFlash(src) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const img = document.createElement('img');
-    img.src = 'canasta.gif';
+    img.src = src;
     img.alt = '';
     img.className = 'canasta-gif';
     document.body.appendChild(img);
@@ -782,7 +782,7 @@
       playCorrect();
       shotBall(true, 'you');
       swishBurst(true);
-      setTimeout(canastaGif, 850);
+      setTimeout(() => gifFlash('canasta.gif'), 850);
       const good = [...$('options').children].find(b => Number(b.dataset.v) === ans);
       if (good) good.classList.add('pop');
       fb.textContent = t('right', ans);
@@ -791,6 +791,7 @@
       playWrong();
       shotBall(false, 'you');
       swishBurst(false);
+      setTimeout(() => gifFlash('fallo.gif'), 850);
       const bad = [...$('options').children].find(b => Number(b.dataset.v) === choice);
       if (bad) bad.classList.add('shake');
       fb.textContent = t('wrong', ans);
