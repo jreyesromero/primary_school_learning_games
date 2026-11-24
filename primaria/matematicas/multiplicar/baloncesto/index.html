@@ -398,11 +398,16 @@
       retryHint: '🔁 Segunda oportunidad: repite la jugada que no entró',
       right: n => `¡Canasta! Sumas ${n} puntos`,
       wrong: ans => `Era ${ans}. ¡Se va fuera! Ahora la repites`,
-      cpuHit: (a, b, ans) => `🤖 La máquina: ${a} × ${b} = ${ans} → ✅ +${ans}`,
+      cpuHit: (a, b, ans, pts) => `🤖 La máquina acierta ${a} × ${b} = ${ans} → ✅ canasta +${pts}`,
+      ftNotice: '¡Tiros libres para ti!',
+      ft1: 'Primer tiro libre (1 punto)',
+      ft2: 'Segundo tiro libre (1 punto)',
+      ftMade: pts => `¡Tiro libre bueno! +${pts}`,
+      ftMissed: ans => `Era ${ans}. Tiro libre fallado`,
       cpuMiss: (a, b, ans) => `🤖 La máquina: ${a} × ${b} = ${ans} → ❌ no entra`,
       winYou: '¡Has ganado! 🏆',
       winCpu: 'Mejor suerte la próxima vez',
-      finalScore: (you, cpu) => `Aciertos: tú ${you} – ${cpu} máquina`,
+      finalScore: (you, cpu) => `Puntos: tú ${you} – ${cpu} máquina`,
       review: 'Para repasar:',
       noMistakes: '¡Sin fallos! 🎉',
       again: 'Otro partido',
@@ -432,11 +437,16 @@
       retryHint: '🔁 Second chance: repeat the shot that missed',
       right: n => `Swish! That is ${n} points`,
       wrong: ans => `It was ${ans}. Off the rim! You get it again`,
-      cpuHit: (a, b, ans) => `🤖 Machine: ${a} × ${b} = ${ans} → ✅ +${ans}`,
+      cpuHit: (a, b, ans, pts) => `🤖 Machine gets ${a} × ${b} = ${ans} → ✅ basket +${pts}`,
+      ftNotice: 'Free throws for you!',
+      ft1: 'First free throw (1 point)',
+      ft2: 'Second free throw (1 point)',
+      ftMade: pts => `Free throw in! +${pts}`,
+      ftMissed: ans => `It was ${ans}. Free throw missed`,
       cpuMiss: (a, b, ans) => `🤖 Machine: ${a} × ${b} = ${ans} → ❌ missed`,
       winYou: 'You won! 🏆',
       winCpu: 'Better luck next time',
-      finalScore: (you, cpu) => `Hits: you ${you} – ${cpu} machine`,
+      finalScore: (you, cpu) => `Points: you ${you} – ${cpu} machine`,
       review: 'To review:',
       noMistakes: 'No mistakes! 🎉',
       again: 'Another match',
@@ -701,6 +711,11 @@
   }
 
   // ---------- Flujo del partido ----------
+  // Puntos: canasta de dos = 2; tiro libre = 1. Los tiros libres no cuentan para los 10 turnos.
+  const BASKET_PTS = 2;
+  const FREE_THROW_PTS = 1;
+  const FT_TRIGGER = 3;   // si la máquina supera en más de 3 puntos, dos tiros libres para ti
+
   function startMatch() {
     const tables = [...document.querySelectorAll('#tables input:checked')].map(i => Number(i.value));
     if (tables.length === 0) {
@@ -709,7 +724,7 @@
     }
     saveStore();
     match = {
-      turn: 0, you: 0, cpu: 0, correct: 0, cpuHits: 0, streak: 0,
+      turn: 0, you: 0, cpu: 0, streak: 0, ftLeft: 0,
       missed: [], last: null, retry: null, recent: [],
       facts: allFacts(tables),
     };
@@ -718,18 +733,31 @@
   }
 
   function nextTurn() {
-    // Se decide cuando se llega a MATCH_LEN turnos y no hay empate; si empatan, siguen los turnos
-    if (match.turn >= MATCH_LEN && match.correct !== match.cpuHits) return endMatch();
+    if (match.ftLeft > 0) return freeThrow();
+    // Se decide al llegar a MATCH_LEN turnos si no hay empate; si empatan, siguen los turnos
+    if (match.turn >= MATCH_LEN && match.you !== match.cpu) return endMatch();
     match.turn++;
 
     // Tras un fallo, la misma jugada vuelve (segunda oportunidad)
     const f = match.retry || pickFact(match.facts, match.last);
+    $('retry-hint').textContent = match.retry ? t('retryHint') : '';
+    renderQuestion(f, false);
+  }
+
+  // Tiro libre: una multiplicación; acierto = 1 punto. No cuenta para los 10 turnos.
+  function freeThrow() {
+    const n = 3 - match.ftLeft;   // 1.º o 2.º tiro libre
+    const f = pickFact(match.facts, match.last);
+    $('retry-hint').textContent = t(n === 1 ? 'ft1' : 'ft2');
+    renderQuestion(f, true);
+  }
+
+  function renderQuestion(f, isFreeThrow) {
     const [x, y] = Math.random() < 0.5 ? [f.a, f.b] : [f.b, f.a];
     const ans = f.a * f.b;
     const opts = makeOptions(ans, f.a, f.b);
-    current = { a: f.a, b: f.b, answer: ans, opts, answered: false };
+    current = { a: f.a, b: f.b, answer: ans, opts, answered: false, ft: isFreeThrow };
 
-    $('retry-hint').textContent = match.retry ? t('retryHint') : '';
     $('question').textContent = `${x} × ${y} = ?`;
     $('feedback').textContent = '';
     $('feedback').className = 'feedback';
@@ -755,31 +783,12 @@
     if (!current || current.answered) return;
     current.answered = true;
 
-    const { a, b, answer: ans } = current;
+    const { a, b, answer: ans, ft } = current;
     const ok = choice === ans;
 
     // Tu progreso por dato
     store.levels[factKey(a, b)] = ok ? Math.min(5, levelOf(a, b) + 1) : 1;
     saveStore();
-
-    // Tu tiro
-    match.recent.push(ok ? 1 : 0);
-    if (match.recent.length > 5) match.recent.shift();
-    match.last = { a, b };
-    if (ok) {
-      match.correct++;
-      match.streak++;
-      // Racha de 3 aciertos seguidos: gif extra tras la canasta
-      if (match.streak % 3 === 0) {
-        setTimeout(() => gifFlash(Math.random() < 0.5 ? 'racha1.gif' : 'racha2.gif', 2000), 2500);
-      }
-      match.you += ans;
-      match.retry = null;
-    } else {
-      match.streak = 0;
-      match.missed.push({ a, b, ans });
-      match.retry = { a, b };
-    }
 
     for (const btn of $('options').children) {
       const v = Number(btn.dataset.v);
@@ -789,21 +798,62 @@
     }
 
     const fb = $('feedback');
+    const good = [...$('options').children].find(b => Number(b.dataset.v) === ans);
+    const bad = [...$('options').children].find(b => Number(b.dataset.v) === choice);
+    $('question').textContent = `${a} × ${b} = ${ans}`;
+
+    if (ft) {
+      // Tiro libre: 1 punto si acierta. La máquina no tira.
+      match.ftLeft--;
+      if (ok) {
+        match.you += FREE_THROW_PTS;
+        playCorrect();
+        shotBall(true, 'you');
+        setTimeout(() => gifFlash('canasta.gif'), 850);
+        if (good) good.classList.add('pop');
+        fb.textContent = t('ftMade', FREE_THROW_PTS);
+        fb.className = 'feedback ok';
+      } else {
+        match.missed.push({ a, b, ans });
+        playWrong();
+        shotBall(false, 'you');
+        setTimeout(() => gifFlash('fallo.gif'), 850);
+        if (bad) bad.classList.add('shake');
+        fb.textContent = t('ftMissed', ans);
+        fb.className = 'feedback bad';
+      }
+      updateScore();
+      $('next').hidden = false;
+      return;
+    }
+
+    // Tiro normal (de los 10 turnos)
+    match.recent.push(ok ? 1 : 0);
+    if (match.recent.length > 5) match.recent.shift();
+    match.last = { a, b };
     if (ok) {
+      match.streak++;
+      // Racha de 3 aciertos seguidos: gif extra tras la canasta
+      if (match.streak % 3 === 0) {
+        setTimeout(() => gifFlash(Math.random() < 0.5 ? 'racha1.gif' : 'racha2.gif', 2000), 2500);
+      }
+      match.you += BASKET_PTS;
+      match.retry = null;
       playCorrect();
       shotBall(true, 'you');
       swishBurst(true);
       setTimeout(() => gifFlash('canasta.gif'), 850);
-      const good = [...$('options').children].find(b => Number(b.dataset.v) === ans);
       if (good) good.classList.add('pop');
-      fb.textContent = t('right', ans);
+      fb.textContent = t('right', BASKET_PTS);
       fb.className = 'feedback ok';
     } else {
+      match.streak = 0;
+      match.missed.push({ a, b, ans });
+      match.retry = { a, b };
       playWrong();
       shotBall(false, 'you');
       swishBurst(false);
       setTimeout(() => gifFlash('fallo.gif'), 850);
-      const bad = [...$('options').children].find(b => Number(b.dataset.v) === choice);
       if (bad) bad.classList.add('shake');
       fb.textContent = t('wrong', ans);
       fb.className = 'feedback bad';
@@ -811,20 +861,26 @@
 
     // Tiro de la máquina: la MISMA multiplicación, con una precisión que sigue la tuya
     const cpuMade = Math.random() < cpuAccuracy();
-    if (cpuMade) { match.cpu += ans; match.cpuHits++; }
-    $('cpu-line').textContent = cpuMade ? t('cpuHit', a, b, ans) : t('cpuMiss', a, b, ans);
+    if (cpuMade) match.cpu += BASKET_PTS;
+    $('cpu-line').textContent = cpuMade
+      ? t('cpuHit', a, b, ans, BASKET_PTS)
+      : t('cpuMiss', a, b, ans);
     setTimeout(() => shotBall(cpuMade, 'cpu'), 900);
 
-    $('question').textContent = `${a} × ${b} = ${ans}`;
+    // Si la máquina supera en más de 3 puntos, dos tiros libres para ti
+    if (match.cpu - match.you > FT_TRIGGER) {
+      match.ftLeft = 2;
+      $('cpu-line').textContent += ' · ' + t('ftNotice');
+    }
     updateScore();
     $('next').hidden = false;
   }
 
   function endMatch() {
     current = null;
-    const won = match.correct > match.cpuHits;
+    const won = match.you > match.cpu;
     $('endtitle').textContent = won ? t('winYou') : t('winCpu');
-    $('endscore').textContent = t('finalScore', match.correct, match.cpuHits);
+    $('endscore').textContent = t('finalScore', match.you, match.cpu);
     const endGif = $('end-gif');
     endGif.src = won ? 'trofeo.gif' : 'derrota.gif';
     endGif.hidden = false;
