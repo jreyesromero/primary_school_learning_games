@@ -814,7 +814,6 @@
         fb.textContent = t('ftMade', FREE_THROW_PTS);
         fb.className = 'feedback ok';
       } else {
-        match.missed.push({ a, b, ans });
         playWrong();
         shotBall(false, 'you');
         setTimeout(() => gifFlash('fallo.gif'), 850);
