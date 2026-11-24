@@ -126,6 +126,11 @@
       <strong id="carrera-name">Carrera</strong>
       <span id="carrera-desc">Avanza una casilla por cada respuesta correcta hasta la meta.</span>
     </a>
+
+    <a class="game" id="baloncesto-link" href="primaria/matematicas/multiplicar/baloncesto/index.html">
+      <strong id="baloncesto-name">¡Canasta!</strong>
+      <span id="baloncesto-desc">Un partido contra la máquina: cada multiplicación acertada es una canasta con sus puntos.</span>
+    </a>
   </section>
 </main>
 
@@ -142,6 +147,8 @@
       zasDesc: 'Repasa las tablas tocando la mosca con el resultado correcto.',
       carrera: 'Carrera',
       carreraDesc: 'Avanza una casilla por cada respuesta correcta hasta la meta.',
+      baloncesto: '¡Canasta!',
+      baloncestoDesc: 'Un partido contra la máquina: cada multiplicación acertada es una canasta con sus puntos.',
     },
     en: {
       title: 'Learning games',
@@ -153,6 +160,8 @@
       zasDesc: 'Practise times tables by tapping the fly with the right answer.',
       carrera: 'Race',
       carreraDesc: 'Move one square for every right answer until the finish line.',
+      baloncesto: 'SWISH!',
+      baloncestoDesc: 'A match against the machine: every right multiplication is a basket worth its points.',
     },
   };
 
@@ -188,6 +197,10 @@
     document.getElementById('carrera-desc').textContent = s.carreraDesc;
     document.getElementById('carrera-link').href =
       `primaria/matematicas/multiplicar/carrera/index.html?lang=${lang}`;
+    document.getElementById('baloncesto-name').textContent = s.baloncesto;
+    document.getElementById('baloncesto-desc').textContent = s.baloncestoDesc;
+    document.getElementById('baloncesto-link').href =
+      `primaria/matematicas/multiplicar/baloncesto/index.html?lang=${lang}`;
 
     // El enlace al juego lleva el idioma para que el juego se abra igual
     document.getElementById('zas-link').href =

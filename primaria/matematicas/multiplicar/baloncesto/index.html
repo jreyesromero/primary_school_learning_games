@@ -1,0 +1,753 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Canasta de tablas</title>
+<style>
+  :root {
+    --bg: #fdf3e7;
+    --fg: #2b2b2b;
+    --card: #ffffff;
+    --accent: #e8662b;
+    --accent-fg: #ffffff;
+    --ok: #2e9e5b;
+    --bad: #d64541;
+    --muted: #777777;
+    --border: #ecd9c4;
+    --court: #f6e3c8;
+    --cpu: #4a6fa5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1d1f24;
+      --fg: #f1f1f1;
+      --card: #2a2d35;
+      --accent: #ff8a4c;
+      --accent-fg: #1d1f24;
+      --ok: #4cc38a;
+      --bad: #ff6b6b;
+      --muted: #aaaaaa;
+      --border: #3a3e48;
+      --court: #2f3340;
+      --cpu: #7da2d6;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1d1f24;
+    --fg: #f1f1f1;
+    --card: #2a2d35;
+    --accent: #ff8a4c;
+    --accent-fg: #1d1f24;
+    --ok: #4cc38a;
+    --bad: #ff6b6b;
+    --muted: #aaaaaa;
+    --border: #3a3e48;
+    --court: #2f3340;
+    --cpu: #7da2d6;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 16px;
+  }
+  main { width: 100%; max-width: 520px; }
+  h1 { text-align: center; font-size: 1.8rem; margin: 8px 0 16px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 14px;
+  }
+  .hidden, [hidden] { display: none !important; }
+  a.home {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.95rem;
+  }
+  .muted { color: var(--muted); font-size: 0.95rem; }
+  .row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+
+  /* Configuración */
+  .tables {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin: 10px 0;
+  }
+  .tables label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 2px;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+  }
+  .tables input { display: none; }
+  .tables label:has(input:checked) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-fg);
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    background: var(--accent);
+    color: var(--accent-fg);
+    font-weight: 700;
+  }
+  button.secondary {
+    background: transparent;
+    color: var(--fg);
+    border: 2px solid var(--border);
+  }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .wide { width: 100%; margin-top: 8px; }
+
+  /* Marcador */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    background: var(--court);
+    border-radius: 14px;
+    padding: 12px 8px;
+    margin-bottom: 12px;
+  }
+  .side { font-weight: 700; font-size: 1rem; }
+  .side .pts { display: block; font-size: 2.4rem; font-weight: 900; line-height: 1.1; }
+  .side.you .pts { color: var(--accent); }
+  .side.cpu .pts { color: var(--cpu); }
+  .vs { font-weight: 800; color: var(--muted); }
+  .turn { text-align: center; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
+
+  .question {
+    font-size: 3rem;
+    font-weight: 800;
+    text-align: center;
+    margin: 10px 0 14px;
+    min-height: 3.6rem;
+  }
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .opt {
+    font-size: 1.8rem;
+    font-weight: 800;
+    padding: 20px 0;
+    background: var(--card);
+    color: var(--fg);
+    border: 3px solid var(--accent);
+  }
+  .opt:not(:disabled):hover { transform: scale(1.03); }
+  .opt:disabled { opacity: 1; }
+  .opt.right { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .opt.wrong { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .feedback {
+    min-height: 2.2rem;
+    text-align: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 12px 0 4px;
+  }
+  .feedback.ok { color: var(--ok); }
+  .feedback.bad { color: var(--bad); }
+  .cpu-line {
+    min-height: 1.4rem;
+    text-align: center;
+    font-size: 1.05rem;
+    color: var(--cpu);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .retry-hint { min-height: 1.2rem; text-align: center; font-weight: 700; color: var(--accent); }
+  #next { width: 100%; }
+
+  /* Animación de canasta */
+  @keyframes swish {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    30% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    100% { opacity: 0; transform: translate(-50%, -50%) translateY(-30px) scale(1.5); }
+  }
+  @keyframes pop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.18) rotate(-4deg); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+  .opt.pop { animation: pop 0.5s ease-out; }
+  .opt.shake { animation: shake 0.4s ease-in-out; }
+  .swish {
+    position: fixed;
+    left: 50%;
+    top: 40%;
+    font-size: 3.6rem;
+    font-weight: 900;
+    color: #ff8a1f;
+    text-shadow: 0 4px 0 #1d1f24;
+    pointer-events: none;
+    animation: swish 0.9s ease-out forwards;
+    z-index: 10;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .opt.pop, .opt.shake { animation: none; }
+  }
+
+  /* Final */
+  .endtitle { font-size: 1.5rem; font-weight: 800; text-align: center; margin: 6px 0; }
+  .endscore { font-size: 2rem; font-weight: 800; text-align: center; margin: 6px 0 12px; }
+  ul.missed { padding-left: 20px; font-size: 1.2rem; }
+</style>
+</head>
+<body>
+<main>
+  <a class="home" id="home-link" href="../../../../index.html">← Inicio</a>
+  <h1>🏀 <span id="title"></span></h1>
+
+  <!-- Configuración -->
+  <section id="setup" class="card">
+    <p><strong id="t-choose"></strong></p>
+    <div id="tables" class="tables"></div>
+
+    <div class="row">
+      <label><input type="checkbox" id="sound-toggle"> <span id="t-sound"></span></label>
+    </div>
+
+    <p class="muted" id="mastery-setup"></p>
+
+    <button id="start" class="wide" disabled></button>
+    <button id="reset" class="secondary wide"></button>
+  </section>
+
+  <!-- Partido -->
+  <section id="game" class="card" hidden>
+    <div class="scoreboard">
+      <div class="side you"><span id="t-you"></span><span class="pts" id="pts-you">0</span></div>
+      <div class="vs">–</div>
+      <div class="side cpu"><span id="t-cpu"></span><span class="pts" id="pts-cpu">0</span></div>
+    </div>
+    <div class="turn" id="hud-turn"></div>
+
+    <div id="retry-hint" class="retry-hint"></div>
+    <div id="question" class="question"></div>
+    <div id="options" class="options"></div>
+    <div id="feedback" class="feedback" aria-live="polite"></div>
+    <div id="cpu-line" class="cpu-line" aria-live="polite"></div>
+
+    <button id="next" hidden></button>
+    <button id="mute" class="secondary wide"></button>
+    <button id="quit" class="secondary wide"></button>
+  </section>
+
+  <!-- Final -->
+  <section id="end" class="card" hidden>
+    <div id="endtitle" class="endtitle"></div>
+    <div id="endscore" class="endscore"></div>
+    <p><strong id="t-review"></strong></p>
+    <ul id="missed" class="missed"></ul>
+    <p class="muted" id="mastery-end"></p>
+    <button id="again" class="wide"></button>
+    <button id="back" class="secondary wide"></button>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------- Idioma ----------
+  // Prioridad: ?lang= en la URL, luego la preferencia guardada, luego el idioma del navegador.
+  const T = {
+    es: {
+      title: '¡Canasta! Partido de tablas',
+      home: '← Inicio',
+      choose: '¿Qué tablas juegan hoy? (elige al menos una)',
+      sound: 'Sonidos',
+      start: '¡Empezar partido!',
+      reset: 'Borrar progreso guardado',
+      next: 'Siguiente ➜',
+      quit: 'Salir',
+      soundOn: '🔊 Sonido: activado',
+      soundOff: '🔇 Sonido: silenciado',
+      you: 'Tú',
+      cpu: 'Máquina',
+      turn: (n, total) => `Turno ${n} de ${total}`,
+      extra: 'Prórroga: sigue el empate',
+      retryHint: '🔁 Segunda oportunidad: repite la jugada que no entró',
+      right: n => `¡Canasta! Sumas ${n} puntos`,
+      wrong: ans => `Era ${ans}. ¡Se va fuera! Ahora la repites`,
+      cpuHit: (a, b, ans) => `🤖 La máquina: ${a} × ${b} = ${ans} → ✅ +${ans}`,
+      cpuMiss: (a, b, ans) => `🤖 La máquina: ${a} × ${b} = ${ans} → ❌ no entra`,
+      winYou: '¡Ganas el partido! 🏆',
+      winCpu: 'Gana la máquina esta vez. ¡Revancha!',
+      finalScore: (you, cpu) => `Tú ${you} – ${cpu} Máquina`,
+      review: 'Para repasar:',
+      noMistakes: '¡Sin fallos! 🎉',
+      again: 'Otro partido',
+      changeTables: 'Cambiar tablas',
+      mastery: (m, total) => `Datos dominados (nivel 5): ${m} de ${total}`,
+      optionLabel: (i, v) => `Opción ${i}: ${v}`,
+      swish: '¡SWISH!',
+      confirmReset: '¿Borrar todo el progreso guardado de este juego?',
+      chooseOne: 'Elige al menos una tabla.',
+    },
+    en: {
+      title: 'SWISH! Times tables match',
+      home: '← Home',
+      choose: 'Which times tables are playing today? (choose at least one)',
+      sound: 'Sounds',
+      start: 'Start the match!',
+      reset: 'Clear saved progress',
+      next: 'Next ➜',
+      quit: 'Quit',
+      soundOn: '🔊 Sound: on',
+      soundOff: '🔇 Sound: off',
+      you: 'You',
+      cpu: 'Machine',
+      turn: (n, total) => `Turn ${n} of ${total}`,
+      extra: 'Overtime: the tie goes on',
+      retryHint: '🔁 Second chance: repeat the shot that missed',
+      right: n => `Swish! That is ${n} points`,
+      wrong: ans => `It was ${ans}. Off the rim! You get it again`,
+      cpuHit: (a, b, ans) => `🤖 Machine: ${a} × ${b} = ${ans} → ✅ +${ans}`,
+      cpuMiss: (a, b, ans) => `🤖 Machine: ${a} × ${b} = ${ans} → ❌ missed`,
+      winYou: 'You win the match! 🏆',
+      winCpu: 'The machine wins this time. Rematch?',
+      finalScore: (you, cpu) => `You ${you} – ${cpu} Machine`,
+      review: 'To review:',
+      noMistakes: 'No mistakes! 🎉',
+      again: 'Another match',
+      changeTables: 'Change tables',
+      mastery: (m, total) => `Facts mastered (level 5): ${m} of ${total}`,
+      optionLabel: (i, v) => `Option ${i}: ${v}`,
+      swish: 'SWISH!',
+      confirmReset: 'Delete all saved progress for this game?',
+      chooseOne: 'Choose at least one table.',
+    },
+  };
+
+  function readLangStore() {
+    try { return localStorage.getItem('site-lang'); } catch (e) { return null; }
+  }
+  function pickLang() {
+    const fromUrl = new URLSearchParams(location.search).get('lang');
+    if (fromUrl === 'es' || fromUrl === 'en') return fromUrl;
+    const saved = readLangStore();
+    if (saved === 'es' || saved === 'en') return saved;
+    return (navigator.language || 'es').toLowerCase().startsWith('en') ? 'en' : 'es';
+  }
+  const LANG = pickLang();
+  const t = (key, ...args) => {
+    const v = T[LANG][key];
+    return typeof v === 'function' ? v(...args) : v;
+  };
+
+  document.documentElement.lang = LANG;
+  document.title = t('title');
+  document.getElementById('home-link').href = `../../../../index.html?lang=${LANG}`;
+  document.getElementById('home-link').textContent = t('home');
+  document.getElementById('title').textContent = t('title');
+  document.getElementById('t-choose').textContent = t('choose');
+  document.getElementById('t-sound').textContent = t('sound');
+  document.getElementById('start').textContent = t('start');
+  document.getElementById('reset').textContent = t('reset');
+  document.getElementById('next').textContent = t('next');
+  document.getElementById('quit').textContent = t('quit');
+  document.getElementById('t-you').textContent = t('you');
+  document.getElementById('t-cpu').textContent = t('cpu');
+  document.getElementById('t-review').textContent = t('review');
+  document.getElementById('again').textContent = t('again');
+  document.getElementById('back').textContent = t('changeTables');
+
+  // ---------- Constantes y almacenamiento ----------
+  const KEY = 'tablas-baloncesto-v1';  // progreso propio, separado de los otros juegos
+  const MATCH_LEN = 10;                // turnos antes de decidir el partido (si no hay empate)
+  const ALL_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const MULTIPLIERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const $ = id => document.getElementById(id);
+
+  function defaultStore() {
+    return { levels: {}, tables: [], sound: true };
+  }
+  function loadStore() {
+    try {
+      const s = JSON.parse(localStorage.getItem(KEY));
+      if (s && s.levels) return { ...defaultStore(), ...s };
+    } catch (e) { /* sin almacenamiento: valores por defecto */ }
+    return defaultStore();
+  }
+  function saveStore() {
+    try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) { /* ignorar */ }
+  }
+  let store = loadStore();
+
+  // ---------- Modelo de datos (igual que ¡ZAS! y Carrera) ----------
+  // Cada dato (par de factores ordenado) tiene un nivel 1-5. Acierto: sube. Fallo: vuelve a 1.
+  function factKey(a, b) { return Math.min(a, b) + 'x' + Math.max(a, b); }
+  function levelOf(a, b) { return store.levels[factKey(a, b)] || 1; }
+
+  function allFacts(tables) {
+    const seen = new Set();
+    const out = [];
+    for (const tb of tables) {
+      for (const m of MULTIPLIERS) {
+        const k = factKey(tb, m);
+        if (!seen.has(k)) {
+          seen.add(k);
+          out.push({ a: Math.min(tb, m), b: Math.max(tb, m) });
+        }
+      }
+    }
+    return out;
+  }
+
+  function pickFact(facts, last) {
+    let pool = facts;
+    if (facts.length > 1 && last) {
+      const lastKey = factKey(last.a, last.b);
+      pool = facts.filter(f => factKey(f.a, f.b) !== lastKey);
+    }
+    const weights = pool.map(f => 6 - levelOf(f.a, f.b));
+    const total = weights.reduce((x, y) => x + y, 0);
+    let r = Math.random() * total;
+    for (let i = 0; i < pool.length; i++) {
+      r -= weights[i];
+      if (r < 0) return pool[i];
+    }
+    return pool[pool.length - 1];
+  }
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  // Opciones "trampa" plausibles: errores típicos de tablas cercanas
+  function makeOptions(ans, a, b) {
+    const candidates = new Set(
+      [(a + 1) * b, (a - 1) * b, a * (b + 1), a * (b - 1),
+       ans + 1, ans - 1, ans + 2, ans - 2, ans + 10, ans - 10]
+        .filter(v => v > 0 && v !== ans)
+    );
+    const opts = [ans, ...shuffle([...candidates]).slice(0, 3)];
+    while (opts.length < 4) {
+      const v = ans + (Math.floor(Math.random() * 11) - 5);
+      if (v > 0 && !opts.includes(v)) opts.push(v);
+    }
+    return shuffle(opts);
+  }
+
+  function masteryText() {
+    const facts = allFacts(store.tables);
+    const mastered = facts.filter(f => levelOf(f.a, f.b) >= 5).length;
+    return t('mastery', mastered, facts.length);
+  }
+
+  // ---------- Sonido (Web Audio, sin archivos) ----------
+  let audioCtx = null;
+  function getAudio() {
+    try {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    } catch (e) { return null; }
+  }
+  function tone(freq, start, dur, type = 'sine', vol = 0.15) {
+    const ctx = getAudio();
+    if (!ctx) return;
+    const t0 = ctx.currentTime + start;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.02);
+  }
+  function playCorrect() {
+    if (!store.sound) return;
+    tone(523, 0, 0.15);
+    tone(659, 0.12, 0.15);
+    tone(784, 0.24, 0.35);
+  }
+  function playWrong() {
+    if (!store.sound) return;
+    tone(196, 0, 0.3, 'triangle', 0.1);
+  }
+  function swishBurst() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const z = document.createElement('div');
+    z.className = 'swish';
+    z.textContent = t('swish');
+    document.body.appendChild(z);
+    setTimeout(() => z.remove(), 950);
+  }
+
+  // ---------- Estado del partido ----------
+  // match: { turn, you, cpu, correct, missed[], last, retry, recent[], facts }
+  let match = null;
+  let current = null;  // { a, b, answer, opts, answered }
+
+  function show(name) {
+    for (const s of ['setup', 'game', 'end']) $(s).hidden = (s !== name);
+  }
+
+  function renderSound() {
+    $('sound-toggle').checked = !!store.sound;
+    $('mute').textContent = store.sound ? t('soundOn') : t('soundOff');
+  }
+
+  function updateStartButton() {
+    $('start').disabled = document.querySelectorAll('#tables input:checked').length === 0;
+  }
+
+  function renderSetup() {
+    const box = $('tables');
+    box.innerHTML = '';
+    for (const tb of ALL_TABLES) {
+      const label = document.createElement('label');
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.value = tb;
+      input.checked = store.tables.includes(tb);
+      input.addEventListener('change', updateStartButton);
+      const span = document.createElement('span');
+      span.textContent = 'x' + tb;
+      label.append(input, span);
+      box.appendChild(label);
+    }
+    updateStartButton();
+    renderSound();
+    $('mastery-setup').textContent = masteryText();
+    show('setup');
+  }
+
+  function updateScore() {
+    $('pts-you').textContent = match.you;
+    $('pts-cpu').textContent = match.cpu;
+    const turnNo = Math.min(match.turn, MATCH_LEN);
+    $('hud-turn').textContent = t('turn', turnNo, MATCH_LEN) +
+      (match.turn > MATCH_LEN ? ' · ' + t('extra') : '');
+  }
+
+  // Probabilidad de acierto de la máquina: sigue tu precisión reciente (entre 40 % y 85 %),
+  // así el partido siempre va igualado y no se hace ni aburrido ni imposible.
+  function cpuAccuracy() {
+    if (match.recent.length === 0) return 0.6;
+    const hits = match.recent.reduce((x, y) => x + y, 0);
+    const p = hits / match.recent.length;
+    return Math.min(0.85, Math.max(0.4, p));
+  }
+
+  // ---------- Flujo del partido ----------
+  function startMatch() {
+    const tables = [...document.querySelectorAll('#tables input:checked')].map(i => Number(i.value));
+    if (tables.length === 0) {
+      alert(t('chooseOne'));
+      return;
+    }
+    store.tables = tables;
+    saveStore();
+    match = {
+      turn: 0, you: 0, cpu: 0, correct: 0,
+      missed: [], last: null, retry: null, recent: [],
+      facts: allFacts(tables),
+    };
+    show('game');
+    nextTurn();
+  }
+
+  function nextTurn() {
+    // Se decide cuando se llega a MATCH_LEN turnos y no hay empate; si empatan, siguen los turnos
+    if (match.turn >= MATCH_LEN && match.you !== match.cpu) return endMatch();
+    match.turn++;
+
+    // Tras un fallo, la misma jugada vuelve (segunda oportunidad)
+    const f = match.retry || pickFact(match.facts, match.last);
+    const [x, y] = Math.random() < 0.5 ? [f.a, f.b] : [f.b, f.a];
+    const ans = f.a * f.b;
+    const opts = makeOptions(ans, f.a, f.b);
+    current = { a: f.a, b: f.b, answer: ans, opts, answered: false };
+
+    $('retry-hint').textContent = match.retry ? t('retryHint') : '';
+    $('question').textContent = `${x} × ${y} = ?`;
+    $('feedback').textContent = '';
+    $('feedback').className = 'feedback';
+    $('cpu-line').textContent = '';
+    $('next').hidden = true;
+
+    const box = $('options');
+    box.innerHTML = '';
+    opts.forEach((v, i) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt';
+      btn.dataset.v = v;
+      btn.textContent = v;
+      btn.setAttribute('aria-label', t('optionLabel', i + 1, v));
+      btn.addEventListener('click', () => answer(v));
+      box.appendChild(btn);
+    });
+
+    updateScore();
+  }
+
+  function answer(choice) {
+    if (!current || current.answered) return;
+    current.answered = true;
+
+    const { a, b, answer: ans } = current;
+    const ok = choice === ans;
+
+    // Tu progreso por dato
+    store.levels[factKey(a, b)] = ok ? Math.min(5, levelOf(a, b) + 1) : 1;
+    saveStore();
+
+    // Tu tiro
+    match.recent.push(ok ? 1 : 0);
+    if (match.recent.length > 5) match.recent.shift();
+    match.last = { a, b };
+    if (ok) {
+      match.correct++;
+      match.you += ans;
+      match.retry = null;
+    } else {
+      match.missed.push({ a, b, ans });
+      match.retry = { a, b };
+    }
+
+    for (const btn of $('options').children) {
+      const v = Number(btn.dataset.v);
+      btn.disabled = true;
+      if (v === ans) btn.classList.add('right');
+      else if (v === choice) btn.classList.add('wrong');
+    }
+
+    const fb = $('feedback');
+    if (ok) {
+      playCorrect();
+      swishBurst();
+      const good = [...$('options').children].find(b => Number(b.dataset.v) === ans);
+      if (good) good.classList.add('pop');
+      fb.textContent = t('right', ans);
+      fb.className = 'feedback ok';
+    } else {
+      playWrong();
+      const bad = [...$('options').children].find(b => Number(b.dataset.v) === choice);
+      if (bad) bad.classList.add('shake');
+      fb.textContent = t('wrong', ans);
+      fb.className = 'feedback bad';
+    }
+
+    // Tiro de la máquina: su propia multiplicación, con su precisión
+    const cf = pickFact(match.facts, null);
+    const cAns = cf.a * cf.b;
+    if (Math.random() < cpuAccuracy()) {
+      match.cpu += cAns;
+      $('cpu-line').textContent = t('cpuHit', cf.a, cf.b, cAns);
+    } else {
+      $('cpu-line').textContent = t('cpuMiss', cf.a, cf.b, cAns);
+    }
+
+    $('question').textContent = `${a} × ${b} = ${ans}`;
+    updateScore();
+    $('next').hidden = false;
+  }
+
+  function endMatch() {
+    current = null;
+    const won = match.you > match.cpu;
+    $('endtitle').textContent = won ? t('winYou') : t('winCpu');
+    $('endscore').textContent = t('finalScore', match.you, match.cpu);
+
+    const list = $('missed');
+    list.innerHTML = '';
+    if (match.missed.length === 0) {
+      const li = document.createElement('li');
+      li.textContent = t('noMistakes');
+      list.appendChild(li);
+    } else {
+      for (const m of match.missed) {
+        const li = document.createElement('li');
+        li.textContent = `${m.a} × ${m.b} = ${m.ans}`;
+        list.appendChild(li);
+      }
+    }
+    $('mastery-end').textContent = masteryText();
+    show('end');
+  }
+
+  // ---------- Eventos ----------
+  $('start').addEventListener('click', startMatch);
+  $('again').addEventListener('click', startMatch);
+  $('back').addEventListener('click', renderSetup);
+  $('next').addEventListener('click', nextTurn);
+  $('quit').addEventListener('click', () => { current = null; renderSetup(); });
+
+  $('sound-toggle').addEventListener('change', e => {
+    store.sound = e.target.checked;
+    saveStore();
+    renderSound();
+  });
+  $('mute').addEventListener('click', () => {
+    store.sound = !store.sound;
+    saveStore();
+    renderSound();
+  });
+  $('reset').addEventListener('click', () => {
+    if (confirm(t('confirmReset'))) {
+      store.levels = {};
+      saveStore();
+      renderSetup();
+    }
+  });
+
+  // Teclado: 1-4 para elegir, Enter para seguir
+  document.addEventListener('keydown', e => {
+    if ($('game').hidden || !current) return;
+    if (!current.answered && /^[1-4]$/.test(e.key)) {
+      const v = current.opts[Number(e.key) - 1];
+      if (v !== undefined) answer(v);
+    } else if (current.answered && e.key === 'Enter') {
+      e.preventDefault();
+      nextTurn();
+    }
+  });
+
+  renderSetup();
+})();
+</script>
+</body>
+</html>
