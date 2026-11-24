@@ -314,6 +314,29 @@
     .ball, .canasta-gif { display: none; }
   }
 
+  /* Falta personal: texto y gif durante 1,5 s (el gif es opcional) */
+  .foul {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 12;
+    pointer-events: none;
+  }
+  .foul img { width: min(80vw, 320px); height: auto; border-radius: 12px; }
+  .foul-text {
+    color: #ffd23f;
+    font-size: 1.6rem;
+    font-weight: 900;
+    text-align: center;
+    text-shadow: 0 3px 0 #1d1f24;
+  }
+
   /* Final */
   .endtitle { font-size: 1.5rem; font-weight: 800; text-align: center; margin: 6px 0; }
   .endscore { font-size: 2rem; font-weight: 800; text-align: center; margin: 6px 0 12px; }
@@ -400,6 +423,7 @@
       wrong: ans => `Era ${ans}. ¡Se va fuera! Ahora la repites`,
       cpuHit: (a, b, ans, pts) => `🤖 La máquina acierta ${a} × ${b} = ${ans} → ✅ canasta +${pts}`,
       ftNotice: '¡Tiros libres para ti!',
+      foul: '¡FALTA PERSONAL, TIROS LIBRES!',
       ft1: 'Primer tiro libre (1 punto)',
       ft2: 'Segundo tiro libre (1 punto)',
       ftMade: pts => `¡Tiro libre bueno! +${pts}`,
@@ -439,6 +463,7 @@
       wrong: ans => `It was ${ans}. Off the rim! You get it again`,
       cpuHit: (a, b, ans, pts) => `🤖 Machine gets ${a} × ${b} = ${ans} → ✅ basket +${pts}`,
       ftNotice: 'Free throws for you!',
+      foul: 'PERSONAL FOUL, FREE THROWS!',
       ft1: 'First free throw (1 point)',
       ft2: 'Second free throw (1 point)',
       ftMade: pts => `Free throw in! +${pts}`,
@@ -638,6 +663,23 @@
     setTimeout(() => { b.remove(); hoop.remove(); }, 1800);
   }
 
+  // Falta personal: texto y gif durante 1,5 s; luego empiezan los tiros libres.
+  // El gif es opcional: si falta en la carpeta, solo se ve el texto.
+  function showFoul(done) {
+    const box = document.createElement('div');
+    box.className = 'foul';
+    const img = document.createElement('img');
+    img.alt = '';
+    img.src = 'falta.gif';
+    img.onerror = () => img.remove();
+    const txt = document.createElement('div');
+    txt.className = 'foul-text';
+    txt.textContent = t('foul');
+    box.append(img, txt);
+    document.body.appendChild(box);
+    setTimeout(() => { box.remove(); done(); }, 1500);
+  }
+
   // Gif de acierto o fallo (aparece tras el lanzamiento). src: 'canasta.gif' o 'fallo.gif'
   function gifFlash(src, ms = 1600) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -733,6 +775,7 @@
   }
 
   function nextTurn() {
+    if (match.foulShowing) return;
     if (match.ftLeft > 0) return freeThrow();
     // Se decide al llegar a MATCH_LEN turnos si no hay empate; si empatan, siguen los turnos
     if (match.turn >= MATCH_LEN && match.you !== match.cpu) return endMatch();
@@ -746,6 +789,13 @@
 
   // Tiro libre: una multiplicación; acierto = 1 punto. No cuenta para los 10 turnos.
   function freeThrow() {
+    if (match.foulPending) {
+      match.foulPending = false;
+      match.foulShowing = true;
+      $('next').hidden = true;
+      showFoul(() => { match.foulShowing = false; freeThrow(); });
+      return;
+    }
     const n = 3 - match.ftLeft;   // 1.º o 2.º tiro libre
     const f = pickFact(match.facts, match.last);
     $('retry-hint').textContent = t(n === 1 ? 'ft1' : 'ft2');
@@ -871,7 +921,7 @@
     // Si la máquina supera en más de 3 puntos, dos tiros libres para ti
     if (match.cpu - match.you > FT_TRIGGER) {
       match.ftLeft = 2;
-      $('cpu-line').textContent += ' · ' + t('ftNotice');
+      match.foulPending = true;
     }
     updateScore();
     $('next').hidden = false;
