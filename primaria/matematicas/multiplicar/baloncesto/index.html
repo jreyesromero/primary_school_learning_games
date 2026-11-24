@@ -786,9 +786,11 @@
     const { a, b, answer: ans, ft } = current;
     const ok = choice === ans;
 
-    // Tu progreso por dato
-    store.levels[factKey(a, b)] = ok ? Math.min(5, levelOf(a, b) + 1) : 1;
-    saveStore();
+    // Tu progreso por dato: solo los turnos normales lo cambian; los tiros libres no
+    if (!ft) {
+      store.levels[factKey(a, b)] = ok ? Math.min(5, levelOf(a, b) + 1) : 1;
+      saveStore();
+    }
 
     for (const btn of $('options').children) {
       const v = Number(btn.dataset.v);
