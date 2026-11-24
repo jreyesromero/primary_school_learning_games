@@ -291,9 +291,27 @@
   }
   .ball.missed { animation: shotMiss 1.7s ease-in forwards; }
   .ball.cpu { filter: hue-rotate(200deg) saturate(1.4); }
+  /* Gif de canasta (fuente: gifss.com, descargado y alojado en esta carpeta) */
+  .canasta-gif {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    width: min(60vw, 240px);
+    height: auto;
+    border-radius: 12px;
+    pointer-events: none;
+    z-index: 11;
+    animation: gifIn 1.6s ease-out forwards;
+  }
+  @keyframes gifIn {
+    0% { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+    15% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    85% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+  }
   @media (prefers-reduced-motion: reduce) {
     .opt.pop, .opt.shake { animation: none; }
-    .ball { display: none; }
+    .ball, .canasta-gif { display: none; }
   }
 
   /* Final */
@@ -607,6 +625,17 @@
     setTimeout(() => { b.remove(); hoop.remove(); }, 1800);
   }
 
+  // Gif de canasta cuando la niña acierta (aparece tras el lanzamiento)
+  function canastaGif() {
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const img = document.createElement('img');
+    img.src = 'canasta.gif';
+    img.alt = '';
+    img.className = 'canasta-gif';
+    document.body.appendChild(img);
+    setTimeout(() => img.remove(), 1600);
+  }
+
   // ---------- Estado del partido ----------
   // match: { turn, you, cpu, correct, missed[], last, retry, recent[], facts }
   let match = null;
@@ -753,6 +782,7 @@
       playCorrect();
       shotBall(true, 'you');
       swishBurst(true);
+      setTimeout(canastaGif, 850);
       const good = [...$('options').children].find(b => Number(b.dataset.v) === ans);
       if (good) good.classList.add('pop');
       fb.textContent = t('right', ans);
