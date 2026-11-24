@@ -756,7 +756,7 @@
   // Puntos: canasta de dos = 2; tiro libre = 1. Los tiros libres no cuentan para los 10 turnos.
   const BASKET_PTS = 2;
   const FREE_THROW_PTS = 1;
-  const FT_TRIGGER = 3;   // si la máquina supera en más de 3 puntos, dos tiros libres para ti
+  const FT_MISSES = 2;    // dos fallos seguidos de la niña en turnos normales: dos tiros libres para ella
 
   function startMatch() {
     const tables = [...document.querySelectorAll('#tables input:checked')].map(i => Number(i.value));
@@ -766,7 +766,7 @@
     }
     saveStore();
     match = {
-      turn: 0, you: 0, cpu: 0, streak: 0, ftLeft: 0,
+      turn: 0, you: 0, cpu: 0, streak: 0, missStreak: 0, ftLeft: 0,
       missed: [], last: null, retry: null, recent: [],
       facts: allFacts(tables),
     };
@@ -884,6 +884,7 @@
     match.last = { a, b };
     if (ok) {
       match.streak++;
+      match.missStreak = 0;
       // Racha de 3 aciertos seguidos: gif extra tras la canasta
       if (match.streak % 3 === 0) {
         setTimeout(() => gifFlash(Math.random() < 0.5 ? 'racha1.gif' : 'racha2.gif', 2000), 2500);
@@ -899,6 +900,7 @@
       fb.className = 'feedback ok';
     } else {
       match.streak = 0;
+      match.missStreak++;
       match.missed.push({ a, b, ans });
       match.retry = { a, b };
       playWrong();
@@ -919,7 +921,8 @@
     setTimeout(() => shotBall(cpuMade, 'cpu'), 900);
 
     // Si la máquina supera en más de 3 puntos, dos tiros libres para ti
-    if (match.cpu - match.you > FT_TRIGGER) {
+    if (!ok && match.missStreak >= FT_MISSES) {
+      match.missStreak = 0;
       match.ftLeft = 2;
       match.foulPending = true;
     }
