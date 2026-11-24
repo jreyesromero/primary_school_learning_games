@@ -53,7 +53,7 @@ The games are designed around a few principles:
 - Choose the tables to play with (×1 to ×10). None is selected by default, and the start button stays disabled until at least one is chosen.
 - A match against the machine, turn by turn. On each turn the child answers a multiplication; a right answer scores the product as points (for example 6 × 7 = 42 points). The machine answers the same multiplication, with an accuracy that follows the child's recent results (between 40 % and 80 %) and drops to 40 % after two misses in a row, so the match stays close. A basketball ball flies to the hoop on each shot.
 - A wrong answer scores nothing and is not punished: the same multiplication comes back on the next turn as a second chance.
-- A match lasts 10 turns. If the score is tied, the turns go on until one side leads.
+- A match lasts 10 turns. The winner is the side with more right answers (hits); if they are tied, the turns go on until one side leads. Three right answers in a row show a GIF, and the end screen shows a trophy or a "better luck next time" GIF.
 - No timer. Its own saved progress, separate from the other games.
 
 ### How to play
@@ -124,7 +124,7 @@ Los juegos se basan en unos pocos principios:
 - Se eligen las tablas con las que se juega (del ×1 al ×10). Ninguna viene marcada por defecto, y el botón de empezar sigue desactivado hasta elegir al menos una.
 - Un partido contra la máquina, turno a turno. En cada turno el niño responde una multiplicación; un acierto suma el resultado como puntos (por ejemplo 6 × 7 = 42 puntos). La máquina responde la misma multiplicación, con una precisión que sigue los aciertos recientes del niño (entre el 40 % y el 80 %) y baja al 40 % tras dos fallos seguidos, así el partido se mantiene igualado. En cada tiro, un balón vuela hacia el aro.
 - Un fallo no suma y no se castiga: la misma multiplicación vuelve en el siguiente turno como segunda oportunidad.
-- El partido dura 10 turnos. Si hay empate, se sigue jugando hasta que uno de los dos se adelante.
+- El partido dura 10 turnos. Gana quien tenga más aciertos; si empatan, se sigue jugando hasta que uno de los dos se adelante. Tres aciertos seguidos muestran un gif, y al final aparece un trofeo o un "mejor suerte la próxima vez" con su gif.
 - Sin cronómetro. Tiene su propio progreso guardado, separado de los demás juegos.
 
 ### Cómo jugar

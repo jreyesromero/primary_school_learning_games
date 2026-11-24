@@ -318,6 +318,8 @@
   .endtitle { font-size: 1.5rem; font-weight: 800; text-align: center; margin: 6px 0; }
   .endscore { font-size: 2rem; font-weight: 800; text-align: center; margin: 6px 0 12px; }
   ul.missed { padding-left: 20px; font-size: 1.2rem; }
+  .end-gif { display: block; width: min(100%, 320px); height: auto; margin: 8px auto 12px; border-radius: 12px; }
+  .end-gif[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -364,6 +366,7 @@
   <section id="end" class="card" hidden>
     <div id="endtitle" class="endtitle"></div>
     <div id="endscore" class="endscore"></div>
+    <img id="end-gif" class="end-gif" alt="" hidden>
     <p><strong id="t-review"></strong></p>
     <ul id="missed" class="missed"></ul>
     <p class="muted" id="mastery-end"></p>
@@ -397,9 +400,9 @@
       wrong: ans => `Era ${ans}. ¡Se va fuera! Ahora la repites`,
       cpuHit: (a, b, ans) => `🤖 La máquina: ${a} × ${b} = ${ans} → ✅ +${ans}`,
       cpuMiss: (a, b, ans) => `🤖 La máquina: ${a} × ${b} = ${ans} → ❌ no entra`,
-      winYou: '¡Ganas el partido! 🏆',
-      winCpu: 'Gana la máquina esta vez. ¡Revancha!',
-      finalScore: (you, cpu) => `Tú ${you} – ${cpu} Máquina`,
+      winYou: '¡Has ganado! 🏆',
+      winCpu: 'Mejor suerte la próxima vez',
+      finalScore: (you, cpu) => `Aciertos: tú ${you} – ${cpu} máquina`,
       review: 'Para repasar:',
       noMistakes: '¡Sin fallos! 🎉',
       again: 'Otro partido',
@@ -431,9 +434,9 @@
       wrong: ans => `It was ${ans}. Off the rim! You get it again`,
       cpuHit: (a, b, ans) => `🤖 Machine: ${a} × ${b} = ${ans} → ✅ +${ans}`,
       cpuMiss: (a, b, ans) => `🤖 Machine: ${a} × ${b} = ${ans} → ❌ missed`,
-      winYou: 'You win the match! 🏆',
-      winCpu: 'The machine wins this time. Rematch?',
-      finalScore: (you, cpu) => `You ${you} – ${cpu} Machine`,
+      winYou: 'You won! 🏆',
+      winCpu: 'Better luck next time',
+      finalScore: (you, cpu) => `Hits: you ${you} – ${cpu} machine`,
       review: 'To review:',
       noMistakes: 'No mistakes! 🎉',
       again: 'Another match',
@@ -626,7 +629,7 @@
   }
 
   // Gif de acierto o fallo (aparece tras el lanzamiento). src: 'canasta.gif' o 'fallo.gif'
-  function gifFlash(src) {
+  function gifFlash(src, ms = 1600) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const img = document.createElement('img');
     img.alt = '';
@@ -634,7 +637,7 @@
     // Se muestra y empieza a contar solo cuando el gif ya está cargado
     img.onload = () => {
       document.body.appendChild(img);
-      setTimeout(() => img.remove(), 1600);
+      setTimeout(() => img.remove(), ms);
     };
     img.src = src;
   }
@@ -706,7 +709,7 @@
     }
     saveStore();
     match = {
-      turn: 0, you: 0, cpu: 0, correct: 0,
+      turn: 0, you: 0, cpu: 0, correct: 0, cpuHits: 0, streak: 0,
       missed: [], last: null, retry: null, recent: [],
       facts: allFacts(tables),
     };
@@ -716,7 +719,7 @@
 
   function nextTurn() {
     // Se decide cuando se llega a MATCH_LEN turnos y no hay empate; si empatan, siguen los turnos
-    if (match.turn >= MATCH_LEN && match.you !== match.cpu) return endMatch();
+    if (match.turn >= MATCH_LEN && match.correct !== match.cpuHits) return endMatch();
     match.turn++;
 
     // Tras un fallo, la misma jugada vuelve (segunda oportunidad)
@@ -765,9 +768,15 @@
     match.last = { a, b };
     if (ok) {
       match.correct++;
+      match.streak++;
+      // Racha de 3 aciertos seguidos: gif extra tras la canasta
+      if (match.streak % 3 === 0) {
+        setTimeout(() => gifFlash(Math.random() < 0.5 ? 'racha1.gif' : 'racha2.gif', 2000), 2500);
+      }
       match.you += ans;
       match.retry = null;
     } else {
+      match.streak = 0;
       match.missed.push({ a, b, ans });
       match.retry = { a, b };
     }
@@ -802,7 +811,7 @@
 
     // Tiro de la máquina: la MISMA multiplicación, con una precisión que sigue la tuya
     const cpuMade = Math.random() < cpuAccuracy();
-    if (cpuMade) match.cpu += ans;
+    if (cpuMade) { match.cpu += ans; match.cpuHits++; }
     $('cpu-line').textContent = cpuMade ? t('cpuHit', a, b, ans) : t('cpuMiss', a, b, ans);
     setTimeout(() => shotBall(cpuMade, 'cpu'), 900);
 
@@ -813,9 +822,12 @@
 
   function endMatch() {
     current = null;
-    const won = match.you > match.cpu;
+    const won = match.correct > match.cpuHits;
     $('endtitle').textContent = won ? t('winYou') : t('winCpu');
-    $('endscore').textContent = t('finalScore', match.you, match.cpu);
+    $('endscore').textContent = t('finalScore', match.correct, match.cpuHits);
+    const endGif = $('end-gif');
+    endGif.src = won ? 'trofeo.gif' : 'derrota.gif';
+    endGif.hidden = false;
 
     const list = $('missed');
     list.innerHTML = '';
@@ -872,7 +884,9 @@
   });
 
   // Precarga de los gifs para que estén listos cuando toque mostrarlos
-  for (const src of ['canasta.gif', 'fallo.gif']) new Image().src = src;
+  for (const src of ['canasta.gif', 'fallo.gif', 'racha1.gif', 'racha2.gif', 'trofeo.gif', 'derrota.gif']) {
+    new Image().src = src;
+  }
 
   renderSetup();
 })();
