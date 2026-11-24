@@ -218,16 +218,65 @@
     z-index: 10;
   }
   /* Balón: sube en arco hacia el aro (canasta) o rebota fuera (fallo) */
+  /* El balón llega al aro (50 % de la animación, a la altura del aro) y entra o rebota */
   @keyframes shotMade {
     0% { transform: translate(-50%, 0) rotate(0deg); opacity: 1; }
-    65% { transform: translate(-50%, -52vh) rotate(360deg) scale(0.95); opacity: 1; }
-    100% { transform: translate(-50%, -60vh) rotate(480deg) scale(0.7); opacity: 0; }
+    50% { transform: translate(-50%, -52vh) rotate(360deg) scale(0.95); opacity: 1; }
+    100% { transform: translate(-50%, -40vh) rotate(480deg) scale(0.8); opacity: 0; }
   }
   @keyframes shotMiss {
     0% { transform: translate(-50%, 0) rotate(0deg); opacity: 1; }
-    55% { transform: translate(-42%, -50vh) rotate(300deg); opacity: 1; }
-    75% { transform: translate(-10%, -40vh) rotate(420deg); opacity: 1; }
-    100% { transform: translate(30%, -10vh) rotate(600deg); opacity: 0; }
+    50% { transform: translate(-50%, -52vh) rotate(300deg); opacity: 1; }
+    70% { transform: translate(-80%, -46vh) rotate(420deg); opacity: 1; }
+    100% { transform: translate(-115%, -32vh) rotate(600deg); opacity: 0; }
+  }
+  /* Aro: aparece solo durante el tiro. Su borde superior está a la altura del centro del balón en el 50 % */
+  .hoop {
+    position: fixed;
+    left: 50%;
+    top: calc(26vh - 21px);
+    width: 96px;
+    height: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 8;
+    animation: hoopFade 1.1s ease-out forwards;
+  }
+  .hoop .board {
+    position: absolute;
+    left: 50%;
+    bottom: 6px;
+    width: 70px;
+    height: 44px;
+    transform: translateX(-50%);
+    border: 3px solid var(--muted);
+    border-radius: 6px;
+    background: var(--card);
+    opacity: 0.85;
+  }
+  .hoop .rim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 6px;
+    border-radius: 3px;
+    background: var(--accent);
+  }
+  .hoop .net {
+    position: absolute;
+    left: 14%;
+    right: 14%;
+    top: 6px;
+    height: 24px;
+    border: 2px dashed var(--muted);
+    border-top: none;
+    border-radius: 0 0 45% 45%;
+    opacity: 0.8;
+  }
+  @keyframes hoopFade {
+    0%, 70% { opacity: 1; }
+    100% { opacity: 0; }
   }
   .ball {
     position: fixed;
@@ -544,11 +593,15 @@
   // Balón que sube hacia el aro. made=true: canasta; made=false: rebota fuera.
   function shotBall(made, who) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const hoop = document.createElement('div');
+    hoop.className = 'hoop';
+    hoop.innerHTML = '<div class="board"></div><div class="rim"></div><div class="net"></div>';
+    document.body.appendChild(hoop);
     const b = document.createElement('div');
     b.className = 'ball' + (made ? '' : ' missed') + (who === 'cpu' ? ' cpu' : '');
     b.textContent = '🏀';
     document.body.appendChild(b);
-    setTimeout(() => b.remove(), 1100);
+    setTimeout(() => { b.remove(); hoop.remove(); }, 1100);
   }
 
   // ---------- Estado del partido ----------
