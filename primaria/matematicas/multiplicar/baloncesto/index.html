@@ -664,7 +664,7 @@
   }
 
   // Falta personal: texto y gif durante 1,5 s; luego empiezan los tiros libres.
-  // El gif es opcional: si falta en la carpeta, solo se ve el texto.
+  // El gif es opcional: si falta en la carpeta, solo se ve el texto. (Fuente: Tenor.)
   function showFoul(done) {
     const box = document.createElement('div');
     box.className = 'foul';
@@ -991,7 +991,7 @@
   });
 
   // Precarga de los gifs para que estén listos cuando toque mostrarlos
-  for (const src of ['canasta.gif', 'fallo.gif', 'racha1.gif', 'racha2.gif', 'trofeo.gif', 'derrota.gif']) {
+  for (const src of ['canasta.gif', 'fallo.gif', 'racha1.gif', 'racha2.gif', 'trofeo.gif', 'derrota.gif', 'falta.gif']) {
     new Image().src = src;
   }
 
