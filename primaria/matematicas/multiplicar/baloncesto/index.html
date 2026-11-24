@@ -629,11 +629,14 @@
   function gifFlash(src) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const img = document.createElement('img');
-    img.src = src;
     img.alt = '';
     img.className = 'canasta-gif';
-    document.body.appendChild(img);
-    setTimeout(() => img.remove(), 1600);
+    // Se muestra y empieza a contar solo cuando el gif ya está cargado
+    img.onload = () => {
+      document.body.appendChild(img);
+      setTimeout(() => img.remove(), 1600);
+    };
+    img.src = src;
   }
 
   // ---------- Estado del partido ----------
@@ -868,6 +871,9 @@
       nextTurn();
     }
   });
+
+  // Precarga de los gifs para que estén listos cuando toque mostrarlos
+  for (const src of ['canasta.gif', 'fallo.gif']) new Image().src = src;
 
   renderSetup();
 })();
