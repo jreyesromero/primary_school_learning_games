@@ -370,7 +370,7 @@
   const $ = id => document.getElementById(id);
 
   function defaultStore() {
-    return { levels: {}, tables: [], sound: true };
+    return { levels: {}, sound: true };
   }
   function loadStore() {
     try {
@@ -444,7 +444,7 @@
   }
 
   function masteryText() {
-    const facts = allFacts(store.tables);
+    const facts = allFacts(ALL_TABLES);
     const mastered = facts.filter(f => levelOf(f.a, f.b) >= 5).length;
     return t('mastery', mastered, facts.length);
   }
@@ -512,7 +512,7 @@
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.value = tb;
-      input.checked = store.tables.includes(tb);
+      input.checked = false;  // siempre empieza sin tablas marcadas
       input.addEventListener('change', updateStartButton);
       const span = document.createElement('span');
       span.textContent = 'x' + tb;
@@ -597,7 +597,6 @@
       alert(t('chooseOne'));
       return;
     }
-    store.tables = tables;
     saveStore();
     race = { pos: 0, questions: 0, correct: 0, missed: [], last: null, facts: allFacts(tables) };
     show('game');

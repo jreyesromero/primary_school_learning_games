@@ -387,7 +387,7 @@
 
   // ---------- Almacenamiento (con try/catch por si el navegador lo bloquea) ----------
   function defaultStore() {
-    return { levels: {}, tables: [], timer: false, sound: true };
+    return { levels: {}, timer: false, sound: true };
   }
   function loadStore() {
     try {
@@ -466,7 +466,7 @@
   }
 
   function masteryText() {
-    const facts = allFacts(store.tables);
+    const facts = allFacts(ALL_TABLES);
     const mastered = facts.filter(f => levelOf(f.a, f.b) >= 5).length;
     return t('mastery', mastered, facts.length);
   }
@@ -542,7 +542,7 @@
       const input = document.createElement('input');
       input.type = 'checkbox';
       input.value = tb;
-      input.checked = store.tables.includes(tb);
+      input.checked = false;  // siempre empieza sin tablas marcadas
       const span = document.createElement('span');
       span.textContent = 'x' + tb;
       input.addEventListener('change', updateStartButton);
@@ -598,7 +598,6 @@
       alert(t('chooseOne'));
       return;
     }
-    store.tables = tables;
     saveStore();
     round = { n: 0, correct: 0, streak: 0, missed: [], last: null, facts: allFacts(tables) };
     show('game');
