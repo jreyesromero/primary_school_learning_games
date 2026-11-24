@@ -214,9 +214,10 @@
     color: #ff8a1f;
     text-shadow: 0 4px 0 #1d1f24;
     pointer-events: none;
-    animation: swish 0.9s ease-out forwards;
+    animation: swish 1.4s ease-out forwards;
     z-index: 10;
   }
+  .swish.missed { color: var(--bad); }
   /* Balón: sube en arco hacia el aro (canasta) o rebota fuera (fallo) */
   /* El balón llega al aro (50 % de la animación, a la altura del aro) y entra o rebota */
   @keyframes shotMade {
@@ -240,7 +241,7 @@
     transform: translateX(-50%);
     pointer-events: none;
     z-index: 8;
-    animation: hoopFade 1.1s ease-out forwards;
+    animation: hoopFade 1.8s ease-out forwards;
   }
   .hoop .board {
     position: absolute;
@@ -286,9 +287,9 @@
     line-height: 1;
     pointer-events: none;
     z-index: 9;
-    animation: shotMade 1s ease-in forwards;
+    animation: shotMade 1.7s ease-in forwards;
   }
-  .ball.missed { animation: shotMiss 1s ease-in forwards; }
+  .ball.missed { animation: shotMiss 1.7s ease-in forwards; }
   .ball.cpu { filter: hue-rotate(200deg) saturate(1.4); }
   @media (prefers-reduced-motion: reduce) {
     .opt.pop, .opt.shake { animation: none; }
@@ -387,7 +388,8 @@
       changeTables: 'Cambiar tablas',
       mastery: (m, total) => `Datos dominados (nivel 5): ${m} de ${total}`,
       optionLabel: (i, v) => `Opción ${i}: ${v}`,
-      swish: '¡SWISH!',
+      made: '¡CANASTA!',
+      missed: '¡FALLA!',
       confirmReset: '¿Borrar todo el progreso guardado de este juego?',
       chooseOne: 'Elige al menos una tabla.',
     },
@@ -420,7 +422,8 @@
       changeTables: 'Change tables',
       mastery: (m, total) => `Facts mastered (level 5): ${m} of ${total}`,
       optionLabel: (i, v) => `Option ${i}: ${v}`,
-      swish: 'SWISH!',
+      made: 'SWISH!',
+      missed: 'MISS!',
       confirmReset: 'Delete all saved progress for this game?',
       chooseOne: 'Choose at least one table.',
     },
@@ -581,13 +584,13 @@
     if (!store.sound) return;
     tone(196, 0, 0.3, 'triangle', 0.1);
   }
-  function swishBurst() {
+  function swishBurst(made) {
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const z = document.createElement('div');
-    z.className = 'swish';
-    z.textContent = t('swish');
+    z.className = 'swish' + (made ? '' : ' missed');
+    z.textContent = made ? t('made') : t('missed');
     document.body.appendChild(z);
-    setTimeout(() => z.remove(), 950);
+    setTimeout(() => z.remove(), 1450);
   }
 
   // Balón que sube hacia el aro. made=true: canasta; made=false: rebota fuera.
@@ -601,7 +604,7 @@
     b.className = 'ball' + (made ? '' : ' missed') + (who === 'cpu' ? ' cpu' : '');
     b.textContent = '🏀';
     document.body.appendChild(b);
-    setTimeout(() => { b.remove(); hoop.remove(); }, 1100);
+    setTimeout(() => { b.remove(); hoop.remove(); }, 1800);
   }
 
   // ---------- Estado del partido ----------
@@ -749,7 +752,7 @@
     if (ok) {
       playCorrect();
       shotBall(true, 'you');
-      swishBurst();
+      swishBurst(true);
       const good = [...$('options').children].find(b => Number(b.dataset.v) === ans);
       if (good) good.classList.add('pop');
       fb.textContent = t('right', ans);
@@ -757,6 +760,7 @@
     } else {
       playWrong();
       shotBall(false, 'you');
+      swishBurst(false);
       const bad = [...$('options').children].find(b => Number(b.dataset.v) === choice);
       if (bad) bad.classList.add('shake');
       fb.textContent = t('wrong', ans);
